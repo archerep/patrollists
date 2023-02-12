@@ -43,13 +43,13 @@ async function runImpl1( namespace, namespaceTitle, namespaceDesc ) {
   redirects.forEach( ( v, k ) => total.set( k, v ) );
   await updateStatistics( 'Непроверенные (неотпатрулированные) ' + namespaceDesc
     + ' (включая перенаправления), отсортированные по времени создания',
-  'Проект:Патрулирование/UnreviewedPages/' + namespaceTitle, total );
+  'Проект:Патрулирование/UnreviewedPages/' + namespaceTitle, total, FilterRedirects.ALL );
   return;
 }
 
 async function startImpl2( namespace, filterRedirects, description, statisticsPage ) {
   const pages = await queryUnreviewedPages( namespace, filterRedirects );
-  await updateStatistics( description, statisticsPage, pages );
+  await updateStatistics( description, statisticsPage, pages, filterRedirects );
   return pages;
 }
 
@@ -90,13 +90,30 @@ function queryUnreviewedPagesImpl( namespace, filterRedirects, urstart, resolve,
   } );
 }
 
-function updateStatistics( description, statisticsPage, pages ) {
+function numberSort( a, b ) {
+  return a - b;
+}
+
+function braces( title ) {
+  return  '[[:' + title + ']]';
+}
+
+function bracesAndNoRedirect( title ) {
+  return  '[[:' + title + ']] ({{noredirect|' + title + '}});
+}
+
+
+function updateStatistics( description, statisticsPage, pages, filterRedirects ) {
   expect( description ).toBeA( 'string' );
   expect( statisticsPage ).toBeA( 'string' );
   expect( pages ).toBeA( Map );
+  
+  const redirectsOnly = filterRedirects == FilterRedirects.NONREDIRECTS;
+  const maxCount = redirectsOnly ? 500 : 1000; // 501st call of {{noredirect}} does not work
+  const braceFunction = redirectsOnly ? bracesAndNoRedirect : braces;
 
-  const ids = [ ...pages.keys() ].sort().slice( 0, 1000 );
-  const text = '{{Патрулирование/UnreviewedHeader}}\n\n' + description + '\n\n' + ids.map( id => '# <small>(' + id + ')</small> [[:' + pages.get( id ) + ']]' ).join( '\n' );
+  const ids = [ ...pages.keys() ].sort(numberSort).slice( 0, maxCount );
+  const text = '{{Патрулирование/UnreviewedHeader}}\n\n' + description + '\n\n' + ids.map( id => '# <small>(' + id + ')</small> ' + braceFunction( pages.get( id ) ) ).join( '\n' );
 
   return new Promise( ( resolve, reject ) => {
     new mw.Api().postWithEditToken( {
