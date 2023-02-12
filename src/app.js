@@ -99,7 +99,7 @@ function braces( title ) {
 }
 
 function bracesAndNoRedirect( title ) {
-  return  '[[:' + title + ']] ({{noredirect|' + title + '}});
+  return  '[[:' + title + ']] ({{noredirect|' + title + '}})';
 }
 
 
@@ -108,7 +108,7 @@ function updateStatistics( description, statisticsPage, pages, filterRedirects )
   expect( statisticsPage ).toBeA( 'string' );
   expect( pages ).toBeA( Map );
   
-  const redirectsOnly = filterRedirects == FilterRedirects.NONREDIRECTS;
+  const redirectsOnly = filterRedirects == FilterRedirects.REDIRECTS;
   const maxCount = redirectsOnly ? 500 : 1000; // 501st call of {{noredirect}} does not work
   const braceFunction = redirectsOnly ? bracesAndNoRedirect : braces;
 
